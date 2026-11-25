@@ -1,12 +1,12 @@
 # SoccerStars Android Preview
 
-The repository contains an Android APK build workflow. The source project archive is provided in the conversation as `SoccerStars-Android-Preview.zip`.
+This repository has a GitHub Actions workflow to package the standalone Pygame preview into a debug APK.
 
 ## Build from phone
-1. Download the ZIP from the ChatGPT conversation.
-2. In this repository, upload the ZIP file to the repository root (do not extract it; the workflow extracts it automatically).
+1. Download `SoccerStars-Android-Preview-Fixed.zip` from the ChatGPT conversation.
+2. Rename it to `SoccerStars-Android-Preview.zip` and upload it to the repository root. Do not extract it; the workflow extracts the archive.
 3. Open the **Actions** tab.
-4. Choose **Build SoccerStars Android APK** and tap **Run workflow**.
-5. After the build completes, download the **SoccerStars-debug-APK** artifact.
+4. Run **Build SoccerStars Android APK**.
+5. When the workflow succeeds, download the `SoccerStars-debug-APK` artifact.
 
-The first Buildozer/python-for-android build has not yet been verified and may need dependency adjustments. The launcher skips the original menus and starts a local 2-player game.
+The workflow validates the archive before building and reports a clear error if the archive or required assets are missing. The APK build itself has not yet been verified on GitHub Actions; any later Buildozer/Android packaging errors will be visible in the build logs.
