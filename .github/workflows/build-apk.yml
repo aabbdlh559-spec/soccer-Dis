@@ -46,7 +46,7 @@ jobs:
           if grep -qE '^android\.minapi[[:space:]]*=' buildozer.spec; then
             sed -i -E 's/^android\.minapi[[:space:]]*=.*/android.minapi = 24/' buildozer.spec
           else
-            printf '\\nandroid.minapi = 24\\n' >> buildozer.spec
+            printf '\nandroid.minapi = 24\n' >> buildozer.spec
           fi
           grep -n '^android.minapi' buildozer.spec
       - name: Override pygame recipe with compatible source
@@ -67,7 +67,7 @@ jobs:
           if grep -qE '^p4a\.local_recipes[[:space:]]*=' buildozer.spec; then
             sed -i -E 's|^p4a\.local_recipes[[:space:]]*=.*|p4a.local_recipes = ./p4a-recipes|' buildozer.spec
           else
-            printf '\\np4a.local_recipes = ./p4a-recipes\\n' >> buildozer.spec
+            printf '\np4a.local_recipes = ./p4a-recipes\n' >> buildozer.spec
           fi
           grep -n '^p4a.local_recipes' buildozer.spec
       - name: Build debug APK
