@@ -40,6 +40,15 @@ jobs:
           sudo apt-get install -y python3-pip python3-venv git zip unzip openjdk-17-jdk build-essential ccache libffi-dev libssl-dev zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake autoconf automake libtool pkg-config
           python3 -m pip install --user --upgrade pip
           python3 -m pip install --user buildozer cython==0.29.36
+      - name: Set minimum Android API for NumPy
+        shell: bash
+        run: |
+          if grep -qE '^android\.minapi[[:space:]]*=' buildozer.spec; then
+            sed -i -E 's/^android\.minapi[[:space:]]*=.*/android.minapi = 24/' buildozer.spec
+          else
+            printf '\\nandroid.minapi = 24\\n' >> buildozer.spec
+          fi
+          grep -n '^android.minapi' buildozer.spec
       - name: Build debug APK
         run: ~/.local/bin/buildozer android debug
       - uses: actions/upload-artifact@v4
