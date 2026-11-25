@@ -8,6 +8,15 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+      - name: Extract source archive if project files are not at root
+        run: |
+          if [ ! -f main.py ]; then
+            archive="SoccerStars-Android-Preview.zip"
+            test -f "$archive" || { echo "Upload $archive to repository root first"; exit 1; }
+            mkdir -p /tmp/soccerstars-source
+            unzip -q "$archive" -d /tmp/soccerstars-source
+            cp -a /tmp/soccerstars-source/SoccerStarsGame-master/. .
+          fi
       - name: Install Buildozer prerequisites
         run: |
           sudo apt update
