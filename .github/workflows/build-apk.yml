@@ -40,6 +40,17 @@ jobs:
           sudo apt-get install -y python3-pip python3-venv git zip unzip openjdk-17-jdk build-essential ccache libffi-dev libssl-dev zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake autoconf automake libtool pkg-config
           python3 -m pip install --user --upgrade pip
           python3 -m pip install --user buildozer cython==0.29.36
+      - name: Pin Python to compatible 3.12 and stable p4a
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed -i -E 's|^requirements[[:space:]]*=.*|requirements = python3==3.12.9,hostpython3==3.12.9,pygame,numpy,pillow|' buildozer.spec
+          if grep -qE '^p4a\.branch[[:space:]]*=' buildozer.spec; then
+            sed -i -E 's|^p4a\.branch[[:space:]]*=.*|p4a.branch = master|' buildozer.spec
+          else
+            printf '\np4a.branch = master\n' >> buildozer.spec
+          fi
+          grep -nE '^(requirements|p4a\.branch)[[:space:]]*=' buildozer.spec
       - name: Set minimum Android API for NumPy
         shell: bash
         run: |
