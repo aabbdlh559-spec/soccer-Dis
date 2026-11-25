@@ -8,20 +8,35 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - name: Extract source archive if project files are not at root
+      - name: Locate and extract source archive (if needed)
+        shell: bash
         run: |
-          if [ ! -f main.py ]; then
-            archive="SoccerStars-Android-Preview.zip"
-            test -f "$archive" || { echo "Upload $archive to repository root first"; exit 1; }
-            mkdir -p /tmp/soccerstars-source
-            unzip -q "$archive" -d /tmp/soccerstars-source
-            cp -a /tmp/soccerstars-source/SoccerStarsGame-master/. .
+          set -euo pipefail
+          if [[ ! -f main.py || ! -f buildozer.spec ]]; then
+            archive='SoccerStars-Android-Preview.zip'
+            if [[ ! -f "$archive" ]]; then
+              echo "ERROR: Source files are missing. Upload SoccerStars-Android-Preview.zip to the repository root, or commit main.py and buildozer.spec with source/assets."
+              exit 1
+            fi
+            tmpdir=$(mktemp -d)
+            unzip -q "$archive" -d "$tmpdir"
+            source_root=$(find "$tmpdir" -type f -name main.py -printf '%h\n' | head -n 1)
+            if [[ -z "$source_root" || ! -f "$source_root/buildozer.spec" ]]; then
+              echo "ERROR: Archive does not contain a valid project root (main.py and buildozer.spec)."
+              exit 1
+            fi
+            cp -a "$source_root/." .
           fi
-      - name: Install Buildozer prerequisites
+          test -f main.py
+          test -f buildozer.spec
+          test -d assets/images
+          test -d assets/sounds
+      - name: Install Android build prerequisites
         run: |
-          sudo apt update
-          sudo apt install -y python3-pip python3-venv git zip unzip openjdk-17-jdk build-essential ccache libffi-dev libssl-dev zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake autoconf automake libtool pkg-config
-          pip3 install --user buildozer cython==0.29.36
+          sudo apt-get update
+          sudo apt-get install -y python3-pip python3-venv git zip unzip openjdk-17-jdk build-essential ccache libffi-dev libssl-dev zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake autoconf automake libtool pkg-config
+          python3 -m pip install --user --upgrade pip
+          python3 -m pip install --user buildozer cython==0.29.36
       - name: Build debug APK
         run: ~/.local/bin/buildozer android debug
       - uses: actions/upload-artifact@v4
