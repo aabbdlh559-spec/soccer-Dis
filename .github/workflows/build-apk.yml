@@ -1,0 +1,23 @@
+name: Build SoccerStars Android APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Buildozer prerequisites
+        run: |
+          sudo apt update
+          sudo apt install -y python3-pip python3-venv git zip unzip openjdk-17-jdk build-essential ccache libffi-dev libssl-dev zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake autoconf automake libtool pkg-config
+          pip3 install --user buildozer cython==0.29.36
+      - name: Build debug APK
+        run: ~/.local/bin/buildozer android debug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SoccerStars-debug-APK
+          path: bin/*.apk
+          if-no-files-found: error
+          retention-days: 7
