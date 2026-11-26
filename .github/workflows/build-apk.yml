@@ -76,39 +76,46 @@ jobs:
           echo "ANDROID_NDK_ROOT=$NDK_DIR" >> "$GITHUB_ENV"
           grep -n '^android.ndk' buildozer.spec
           echo "Pinned NDK directory: $NDK_DIR"
-      - name: Patch CPython grp module for Android and register local Python recipe
+      - name: Prepare patched python-for-android source
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p p4a-recipes/python3/patches
-          cat > p4a-recipes/python3/__init__.py <<'PY'
-          from pythonforandroid.recipes.python3 import Python3Recipe
+          git clone --depth 1 https://github.com/kivy/python-for-android.git .p4a
+          python3 - <<'PY'
+          from pathlib import Path
+          recipe = Path(".p4a/pythonforandroid/recipes/python3/__init__.py")
+          source = recipe.read_text()
+          patcher = '''
 
-          class AndroidPython3Recipe(Python3Recipe):
-              patches = Python3Recipe.patches + ["patches/disable-grp-android.patch"]
-
-          recipe = AndroidPython3Recipe()
+          # CI compatibility: Android Bionic lacks group enumeration functions.
+          from pythonforandroid.recipes.python3 import Python3Recipe as _P3
+          _original_apply_patches = _P3.apply_patches
+          def _android_grp_compat(self, arch, build_dir=None):
+              _original_apply_patches(self, arch, build_dir=build_dir)
+              from pathlib import Path
+              target = Path(build_dir or self.get_build_dir(arch.arch)) / "Modules" / "grpmodule.c"
+              if not target.exists():
+                  raise RuntimeError("CPython grpmodule.c missing after recipe patch stage")
+              text = target.read_text()
+              if "ANDROID_GRP_COMPAT_STUBS" not in text:
+                  needle = "#include <grp.h>"
+                  stubs = needle + "\\n/* ANDROID_GRP_COMPAT_STUBS: Bionic has no group enumeration APIs. */\\n#ifdef __ANDROID__\\nstatic void setgrent(void) { }\\nstatic struct group *getgrent(void) { return NULL; }\\nstatic void endgrent(void) { }\\n#endif"
+                  if needle not in text:
+                      raise RuntimeError("Could not find grp.h include to patch")
+                  target.write_text(text.replace(needle, stubs, 1))
+              print("Applied Android grp compatibility stubs to CPython.")
+          _P3.apply_patches = _android_grp_compat
+          '''
+          if "ANDROID_GRP_COMPAT_STUBS" not in source:
+              recipe.write_text(source + patcher)
           PY
-          cat > p4a-recipes/python3/patches/disable-grp-android.patch <<'PATCH'
-          diff --git a/Modules/grpmodule.c b/Modules/grpmodule.c
-          --- a/Modules/grpmodule.c
-          +++ b/Modules/grpmodule.c
-          @@ -6,1 +6,8 @@
-           #include <grp.h>
-          +
-          +/* Android's Bionic libc does not provide these enumeration APIs. */
-          +#ifdef __ANDROID__
-          +static void setgrent(void) { }
-          +static struct group *getgrent(void) { return NULL; }
-          +static void endgrent(void) { }
-          +#endif
-          PATCH
-          if grep -qE '^p4a\.local_recipes[[:space:]]*=' buildozer.spec; then
-            sed -i -E 's|^p4a\.local_recipes[[:space:]]*=.*|p4a.local_recipes = ./p4a-recipes|' buildozer.spec
+          if grep -qE '^p4a\\.source_dir[[:space:]]*=' buildozer.spec; then
+            sed -i "s|^p4a\\.source_dir[[:space:]]*=.*|p4a.source_dir = $GITHUB_WORKSPACE/.p4a|" buildozer.spec
           else
-            printf '\np4a.local_recipes = ./p4a-recipes\n' >> buildozer.spec
+            printf '\\np4a.source_dir = %s/.p4a\\n' "$GITHUB_WORKSPACE" >> buildozer.spec
           fi
-          echo 'Local python3 recipe and Android grp compatibility patch created.'
+          echo "Configured Buildozer to use patched p4a at $GITHUB_WORKSPACE/.p4a"
+          grep -n '^p4a.source_dir' buildozer.spec
       - name: Override pygame recipe with compatible source
         shell: bash
         run: |
