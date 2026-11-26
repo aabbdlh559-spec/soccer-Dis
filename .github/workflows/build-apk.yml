@@ -93,7 +93,7 @@ jobs:
           diff --git a/Modules/grpmodule.c b/Modules/grpmodule.c
           --- a/Modules/grpmodule.c
           +++ b/Modules/grpmodule.c
-          @@ -5,6 +5,13 @@
+          @@ -6,1 +6,8 @@
            #include <grp.h>
           +
           +/* Android's Bionic libc does not provide these enumeration APIs. */
@@ -102,8 +102,6 @@ jobs:
           +static struct group *getgrent(void) { return NULL; }
           +static void endgrent(void) { }
           +#endif
-           
-           #include "clinic/grpmodule.c.h"
           PATCH
           if grep -qE '^p4a\.local_recipes[[:space:]]*=' buildozer.spec; then
             sed -i -E 's|^p4a\.local_recipes[[:space:]]*=.*|p4a.local_recipes = ./p4a-recipes|' buildozer.spec
