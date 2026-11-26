@@ -75,7 +75,7 @@ jobs:
           echo "ANDROID_NDK_HOME=$NDK_DIR" >> "$GITHUB_ENV"
           echo "ANDROID_NDK_ROOT=$NDK_DIR" >> "$GITHUB_ENV"
           grep -n '^android.ndk' buildozer.spec
-          echo "Pinned NDK directory: $NDK_DIR
+          echo "Pinned NDK directory: $NDK_DIR"
       - name: Patch CPython grp module for Android and register local Python recipe
         shell: bash
         run: |
