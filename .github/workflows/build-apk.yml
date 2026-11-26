@@ -60,6 +60,16 @@ jobs:
             printf '\nandroid.minapi = 24\n' >> buildozer.spec
           fi
           grep -n '^android.minapi' buildozer.spec
+      - name: Use Android NDK 25b for CPython group module compatibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -qE '^android\.ndk[[:space:]]*=' buildozer.spec; then
+            sed -i -E 's/^android\.ndk[[:space:]]*=.*/android.ndk = 25b/' buildozer.spec
+          else
+            printf '\nandroid.ndk = 25b\n' >> buildozer.spec
+          fi
+          grep -n '^android.ndk' buildozer.spec
       - name: Override pygame recipe with compatible source
         shell: bash
         run: |
