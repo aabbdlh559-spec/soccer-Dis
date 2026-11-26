@@ -109,13 +109,10 @@ jobs:
           if "ANDROID_GRP_COMPAT_STUBS" not in source:
               recipe.write_text(source + patcher)
           PY
-          if grep -qE '^p4a\\.source_dir[[:space:]]*=' buildozer.spec; then
-            sed -i "s|^p4a\\.source_dir[[:space:]]*=.*|p4a.source_dir = $GITHUB_WORKSPACE/.p4a|" buildozer.spec
-          else
-            printf '\\np4a.source_dir = %s/.p4a\\n' "$GITHUB_WORKSPACE" >> buildozer.spec
-          fi
+          sed -i '/^p4a.source_dir[[:space:]]*=/d' buildozer.spec
+          echo "p4a.source_dir = $GITHUB_WORKSPACE/.p4a" >> buildozer.spec
           echo "Configured Buildozer to use patched p4a at $GITHUB_WORKSPACE/.p4a"
-          grep -n '^p4a.source_dir' buildozer.spec
+          grep -F 'p4a.source_dir =' buildozer.spec
       - name: Override pygame recipe with compatible source
         shell: bash
         run: |
