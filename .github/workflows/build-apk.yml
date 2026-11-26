@@ -87,31 +87,37 @@ jobs:
           source = recipe.read_text()
           patcher = '''
 
-          # CI compatibility: Android Bionic lacks group enumeration functions.
+          # Android Bionic compatibility for CPython grp module
           from pythonforandroid.recipes.python3 import Python3Recipe as _P3
           _original_apply_patches = _P3.apply_patches
           def _android_grp_compat(self, arch, build_dir=None):
               _original_apply_patches(self, arch, build_dir=build_dir)
-              from pathlib import Path
               target = Path(build_dir or self.get_build_dir(arch.arch)) / "Modules" / "grpmodule.c"
               if not target.exists():
-                  raise RuntimeError("CPython grpmodule.c missing after recipe patch stage")
+                  raise RuntimeError("CPython grpmodule.c missing")
               text = target.read_text()
               if "ANDROID_GRP_COMPAT_STUBS" not in text:
                   needle = "#include <grp.h>"
-                  stubs = needle + "\\n/* ANDROID_GRP_COMPAT_STUBS: Bionic has no group enumeration APIs. */\\n#ifdef __ANDROID__\\nstatic void setgrent(void) { }\\nstatic struct group *getgrent(void) { return NULL; }\\nstatic void endgrent(void) { }\\n#endif"
+                  stubs = needle + "\\n/* ANDROID_GRP_COMPAT_STUBS */\\n#ifdef __ANDROID__\\nstatic void setgrent(void) { }\\nstatic struct group *getgrent(void) { return NULL; }\\nstatic void endgrent(void) { }\\n#endif"
                   if needle not in text:
-                      raise RuntimeError("Could not find grp.h include to patch")
+                      raise RuntimeError("grp.h include not found")
                   target.write_text(text.replace(needle, stubs, 1))
-              print("Applied Android grp compatibility stubs to CPython.")
+              print("Patched CPython grp APIs for Android")
           _P3.apply_patches = _android_grp_compat
           '''
           if "ANDROID_GRP_COMPAT_STUBS" not in source:
               recipe.write_text(source + patcher)
           PY
-          sed -i '/^p4a.source_dir[[:space:]]*=/d' buildozer.spec
-          echo "p4a.source_dir = $GITHUB_WORKSPACE/.p4a" >> buildozer.spec
-          echo "Configured Buildozer to use patched p4a at $GITHUB_WORKSPACE/.p4a"
+          python3 - <<'PY'
+          from pathlib import Path
+          spec = Path("buildozer.spec")
+          text = spec.read_text()
+          line = "p4a.source_dir = " + str(Path.cwd() / ".p4a")
+          lines = [x for x in text.splitlines() if not x.strip().startswith("p4a.source_dir")]
+          lines.append(line)
+          spec.write_text("\\n".join(lines) + "\\n")
+          print("Set p4a.source_dir:", line)
+          PY
           grep -F 'p4a.source_dir =' buildozer.spec
       - name: Override pygame recipe with compatible source
         shell: bash
