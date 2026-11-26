@@ -98,7 +98,7 @@ jobs:
               text = target.read_text()
               if "ANDROID_GRP_COMPAT_STUBS" not in text:
                   needle = "#include <grp.h>"
-                  stubs = needle + "\\n/* ANDROID_GRP_COMPAT_STUBS */\\n#ifdef __ANDROID__\\nstatic void setgrent(void) { }\\nstatic struct group *getgrent(void) { return NULL; }\\nstatic void endgrent(void) { }\\n#endif"
+                  stubs = needle + "\n/* ANDROID_GRP_COMPAT_STUBS */\n#ifdef __ANDROID__\nstatic void setgrent(void) { }\nstatic struct group *getgrent(void) { return NULL; }\nstatic void endgrent(void) { }\n#endif"
                   if needle not in text:
                       raise RuntimeError("grp.h include not found")
                   target.write_text(text.replace(needle, stubs, 1))
@@ -115,7 +115,7 @@ jobs:
           line = "p4a.source_dir = " + str(Path.cwd() / ".p4a")
           lines = [x for x in text.splitlines() if not x.strip().startswith("p4a.source_dir")]
           lines.append(line)
-          spec.write_text("\\n".join(lines) + "\\n")
+          spec.write_text("\n".join(lines) + "\n")
           print("Set p4a.source_dir:", line)
           PY
           grep -F 'p4a.source_dir =' buildozer.spec
