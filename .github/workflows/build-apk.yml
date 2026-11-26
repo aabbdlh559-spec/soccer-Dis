@@ -112,6 +112,8 @@ jobs:
           from pathlib import Path
           spec = Path("buildozer.spec")
           text = spec.read_text()
+          # Normalize archives whose spec file contains escaped newline sequences.
+          text = text.replace("\\n", "\n")
           line = "p4a.source_dir = " + str(Path.cwd() / ".p4a")
           lines = [x for x in text.splitlines() if not x.strip().startswith("p4a.source_dir")]
           lines.append(line)
